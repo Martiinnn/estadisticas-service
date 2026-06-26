@@ -41,10 +41,21 @@ app.add_middleware(
 )
 
 
-# TODO (alumno): implementar las rutas de salud que usará Kubernetes:
-#   - liveness: ¿el proceso está vivo? (respuesta simple).
-#   - readiness: ¿está listo para recibir tráfico? Debe verificar la BD.
-# Luego configurar livenessProbe/readinessProbe en el Deployment de EKS.
+from fastapi.responses import JSONResponse
+
+@app.get("/livez")
+def liveness():
+    return {"status": "ok"}
+
+@app.get("/readyz")
+def readiness():
+    try:
+        with conexion() as conn:
+            with dict_cursor(conn) as cur:
+                cur.execute("SELECT 1")
+        return {"status": "ok", "db": "up"}
+    except Exception as e:
+        return JSONResponse(status_code=503, content={"status": "degraded", "db": "down", "error": str(e)})
 
 
 @app.get("/api/estadisticas/mias")
